@@ -15,9 +15,10 @@ Compare them yourself with, for example:
 | Run identifier | `<name>-<timestamp>` | `<name>-c<concurrent_threads>-<timestamp>`, so each ramp level has its own folder |
 | Virtual users | Started together | `start_delay_sec = ramp_up_sec × i / concurrent_threads` is passed to every user (staggered start) |
 | RLS | Users list edited in the code | `rls_source` (`list`, `file`, `none`) and `rls_scope` (`global`, `per_model`): UPNs from `rls_users`, from a text file (`rls_users_file`) or from each model's `users` / `users_file`, spread across the virtual users |
-| New parameters | – | `enable_think_times`, `think_time_scale`, `max_think_time_sec`, `think_time_jitter_pct`, `fallback_think_time_sec`, `ramp_up_sec`, `initial_user_jitter_sec`, `rls_source`, `rls_scope`, `rls_users`, `rls_users_file`, `model_settings` |
+| New parameters | – | `enable_think_times`, `think_time_scale`, `max_think_time_sec`, `think_time_jitter_pct`, `fallback_think_time_sec`, `ramp_up_sec`, `initial_user_jitter_sec`, `rls_source`, `rls_scope`, `rls_users`, `rls_users_file`, `model_settings`, `stop_on_query_error`, `fail_on_error_rate`, `write_results_to_tables` |
 | Callee | `RunPerfScenario` | `RunPerfScenario_v3` |
 | Result consolidation | Kept | Kept (same polars aggregation cell) |
+| Results for other tools | `display` of a polars frame; `deltalake` imported but not used | `summary.json` per run and the same summary as the notebook **exit value**; optional Delta tables `loadtest_runs` and `loadtest_queries` (`write_results_to_tables`) |
 
 Everything that the original does with `notebookutils.notebook.runMultiple` (one activity per virtual user, DAG concurrency =
 number of users) is kept.
@@ -32,6 +33,8 @@ number of users) is kept.
 | Start | All users immediately | `start_delay_sec` (set by `RunLoadTest_v3`) plus optional random `initial_user_jitter_sec` |
 | Logging | CSV with one row per query | Same CSV, plus `logs/<loadtestId>/thinktimes/*_thinktimes.csv` with the recorded, scaled and applied pause of every action (only when think times are enabled) |
 | Security | The connection string, which carries the access token, is printed and written to `error.log` | The token is replaced by `<redacted-token>` in console output and `error.log` |
+| Failed query | The exception ends the virtual user; its CSV is written only at the end, so **all** its rows are lost | The query is a row with `status = error`, `rows = 0` and the error message (token redacted); a line is added to `error.log`, the connection is reopened if it was closed and the user goes on |
+| CSV writing | After the last iteration | In `finally`: the rows already measured are written even if the user stops early. The `DataReader` is always closed |
 | CSV writing | Default file opening | `newline=''`, so multi-line DAX text keeps a stable CSV format |
 | Code structure | Single flow | Think-time logic is in a cell that depends only on the standard library, so it is unit-tested without Fabric |
 

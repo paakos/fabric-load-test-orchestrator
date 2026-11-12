@@ -107,6 +107,18 @@
                   "model_settings": {
                     "value": "@string(item())",
                     "type": "Expression"
+                  },
+                  "stop_on_query_error": {
+                    "value": "@pipeline().parameters.stop_on_query_error",
+                    "type": "Expression"
+                  },
+                  "fail_on_error_rate": {
+                    "value": "@pipeline().parameters.fail_on_error_rate",
+                    "type": "Expression"
+                  },
+                  "write_results_to_tables": {
+                    "value": "@pipeline().parameters.write_results_to_tables",
+                    "type": "Expression"
                   }
                 }
               }
@@ -190,6 +202,18 @@
       "rls_users_file": {
         "type": "String",
         "defaultValue": ""
+      },
+      "stop_on_query_error": {
+        "type": "Bool",
+        "defaultValue": false
+      },
+      "fail_on_error_rate": {
+        "type": "Float",
+        "defaultValue": 1.0
+      },
+      "write_results_to_tables": {
+        "type": "Bool",
+        "defaultValue": false
       }
     }
   }

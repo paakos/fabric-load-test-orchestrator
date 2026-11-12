@@ -19,7 +19,9 @@ to any workspace with **one installer notebook**.
 | All users start at once | Optional **staggered start** (`ramp_up_sec`) and random initial offset (`initial_user_jitter_sec`) |
 | Users hard-coded in a cell | RLS identities from a **list** (`rls_users`) or a **text file** (`rls_users_file`), for all models or **one per model** (`rls_source`, `rls_scope`) |
 | Access token printed in logs | Token **redacted** in console output and `error.log` |
+| A failed query ends the virtual user and loses all its rows | The failed query is a row with `status = error`; the user goes on and its CSV is always written |
 | Manual import of every item | **Installer notebook** + zip: resolves workspace, lakehouse, notebook and pipeline ids for the target workspace and verifies the result |
+| Results only as CSV files and a `display` | Every run ends with **`summary.json`** and returns it as the notebook **exit value** (p50, p95, failed queries, lost users); optional Delta tables `loadtest_runs` and `loadtest_queries` |
 | – | **Analysis notebook** (DuckDB) with nine queries that prove the ramp, the think times and the parallelism |
 | – | Test suite that runs the real notebooks against a fake ADOMD/Fabric runtime |
 
@@ -105,6 +107,9 @@ and [RLS identities](docs/parameters.md#rls-identities).
 | `rls_scope` | `global` | `global`: same identities for every model; `per_model`: `users` / `users_file` in each `models` item |
 | `rls_users` | empty | Global list of UPNs to impersonate (`EffectiveUserName`), comma-separated |
 | `rls_users_file` | empty | Global text file with the UPNs, e.g. `/lakehouse/default/Files/PerfScenarios/Users/users.txt` |
+| `stop_on_query_error` | `false` | `true`: a virtual user stops at its first failed query (behaviour before 3.4.0). By default the failed query is a `status = error` row and the user goes on |
+| `fail_on_error_rate` | `1.0` | Fail the notebook when the run's error rate (0 to 1) is above it. `1.0` never fails, `0` fails on any failed query |
+| `write_results_to_tables` | `false` | Also append each run to the Delta tables `loadtest_runs` and `loadtest_queries` |
 
 All parameters, their effect and recommendations: [docs/parameters.md](docs/parameters.md). Field-by-field reference of the
 `PL_PerfTest_MultiModel_v3` pipeline, with ready-to-paste examples: [docs/pipeline-parameters.md](docs/pipeline-parameters.md).
