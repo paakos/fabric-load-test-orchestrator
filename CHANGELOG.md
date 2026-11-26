@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.5.0
+
+Additive release: no change to the test notebooks, the pipelines or the result schema.
+
+- **New notebook `AnalyzeReportPerformance_v3`:** report performance analysis of the test logs, with 20 analyses (Q01-Q20) in six
+  blocks (overall, per action and journey, per visual, per RLS identity, skew introduced by the offset and the think times, test
+  quality and regression), each with its table, a chart, a description (what it measures, how it is computed, how to read it, skew the
+  test may introduce) and automatic conclusions that name the affected model and level. It reads the CSV files with DuckDB, reads 3.3
+  and 3.4 result formats, works without think times, and can optionally save every result as a Delta table `perf_qNN_<topic>` in the
+  default lakehouse (`SAVE_TO_TABLES = True`) to build a Power BI report on top. UPNs are masked by default (`MASK_UPN`).
+- The package and the installer deploy the new notebook (4 notebooks and 2 pipelines).
+- `tools/make_synthetic_logs.py` generates synthetic logs with the exact result schema; the new tests execute every cell of the
+  notebook over them. `requirements-dev.txt` adds `matplotlib`, `deltalake` and `pyarrow`.
+
 ## 3.4.0
 
 **Behaviour change: a failed query no longer ends the virtual user.** Until 3.3.0 an exception in a query ended that virtual user,

@@ -50,7 +50,7 @@ def test_upstream_notebooks_carry_no_outputs():
         assert all(not c.get("outputs") for c in nb["cells"] if c["cell_type"] == "code")
 
 
-@pytest.mark.parametrize("name,parameter_cells", [("RunPerfScenario_v3", 1), ("RunLoadTest_v3", 1), ("AnalyzeLoadTest_v3", 0)])
+@pytest.mark.parametrize("name,parameter_cells", [("RunPerfScenario_v3", 1), ("RunLoadTest_v3", 1), ("AnalyzeLoadTest_v3", 0), ("AnalyzeReportPerformance_v3", 1)])
 def test_notebooks_are_valid_clean_and_have_the_expected_parameters_cell(name, parameter_cells):
     nbformat = pytest.importorskip("nbformat")
     path = NOTEBOOKS / f"{name}.ipynb"

@@ -60,4 +60,4 @@ Names are never used as evidence of a leftover: a workspace or lakehouse may leg
 ## Updating or removing
 
 Run the installer again with `OVERWRITE = True` to update in place; ids stay the same, so schedules keep working.
-To remove the solution, delete the five items in the workspace UI. Result files under `Files/PerfScenarios/logs/` are kept until you delete them.
+To remove the solution, delete the six items in the workspace UI. Result files under `Files/PerfScenarios/logs/` are kept until you delete them.

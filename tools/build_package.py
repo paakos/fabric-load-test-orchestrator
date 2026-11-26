@@ -23,7 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "FabricLoadTest_v3"
-VERSION = "3.4.0"
+VERSION = "3.5.0"
 
 GUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 EMAIL = re.compile(r"[\w.+-]+@((?:[\w-]+\.)+[A-Za-z]{2,})")
@@ -37,6 +37,8 @@ ITEMS = [
      "One semantic model at one concurrency level. Receives its parameters from the pipeline and calls RunPerfScenario_v3."),
     ("Notebook", "AnalyzeLoadTest_v3", "notebooks/AnalyzeLoadTest_v3.ipynb",
      "Read-only analysis (DuckDB over the result CSV files): ramp, think times and parallel models."),
+    ("Notebook", "AnalyzeReportPerformance_v3", "notebooks/AnalyzeReportPerformance_v3.ipynb",
+     "Report performance analysis of the test logs: 20 analyses (Q01-Q20) with charts, automatic conclusions and optional Delta tables."),
     ("DataPipeline", "PL_PerfTest_Ramp_v3", "pipelines/PL_PerfTest_Ramp_v3.json",
      "One semantic model: ramp of concurrent users (sequential ForEach) over RunLoadTest_v3."),
     ("DataPipeline", "PL_PerfTest_MultiModel_v3", "pipelines/PL_PerfTest_MultiModel_v3.json",

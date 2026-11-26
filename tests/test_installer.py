@@ -190,14 +190,15 @@ def test_deploy_creates_every_item_with_references_of_this_workspace(env):
     namespace, out = run_installer(fake, lake)
     assert "VERIFICATION OK" in out
     names = {i["displayName"]: i for i in fake.items.values()}
-    assert set(names) == {"RunPerfScenario_v3", "RunLoadTest_v3", "AnalyzeLoadTest_v3", "PL_PerfTest_Ramp_v3", "PL_PerfTest_MultiModel_v3"}
+    assert set(names) == {"RunPerfScenario_v3", "RunLoadTest_v3", "AnalyzeLoadTest_v3", "AnalyzeReportPerformance_v3",
+                          "PL_PerfTest_Ramp_v3", "PL_PerfTest_MultiModel_v3"}
     ramp = json.loads(fake.definition_text("PL_PerfTest_Ramp_v3"))
     notebook_activity = ramp["properties"]["activities"][0]["typeProperties"]["activities"][0]["typeProperties"]
     assert notebook_activity["workspaceId"] == WS_ID and notebook_activity["notebookId"] == names["RunLoadTest_v3"]["id"]
     multi = json.loads(fake.definition_text("PL_PerfTest_MultiModel_v3"))
     reference = multi["properties"]["activities"][0]["typeProperties"]["activities"][0]["typeProperties"]["pipeline"]["referenceName"]
     assert reference == names["PL_PerfTest_Ramp_v3"]["id"]
-    for name in ("RunPerfScenario_v3", "RunLoadTest_v3", "AnalyzeLoadTest_v3"):
+    for name in ("RunPerfScenario_v3", "RunLoadTest_v3", "AnalyzeLoadTest_v3", "AnalyzeReportPerformance_v3"):
         dependencies = json.loads(fake.definition_text(name))["metadata"]["dependencies"]["lakehouse"]
         assert dependencies["default_lakehouse"] == LH_ID and dependencies["default_lakehouse_workspace_id"] == WS_ID
     for item in fake.items.values():
@@ -211,7 +212,7 @@ def test_deploy_works_when_the_api_answers_synchronously(env):
     fake, lake = env
     fake.lro = False
     _, out = run_installer(fake, lake)
-    assert "VERIFICATION OK" in out and len(fake.items) == 5
+    assert "VERIFICATION OK" in out and len(fake.items) == 6
 
 
 def test_rerun_updates_the_existing_items_without_duplicating_them(env):

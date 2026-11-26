@@ -62,10 +62,10 @@ The gate documentation is in Spanish.
 ## Repository layout
 
 ```text
-notebooks/      RunPerfScenario_v3, RunLoadTest_v3, AnalyzeLoadTest_v3  (source of truth, English)
+notebooks/      RunPerfScenario_v3, RunLoadTest_v3, AnalyzeLoadTest_v3, AnalyzeReportPerformance_v3  (source of truth, English)
 pipelines/      PL_PerfTest_Ramp_v3.json, PL_PerfTest_MultiModel_v3.json (with {{placeholders}} resolved by the installer)
 installer/      Setup_LoadTest_v3.ipynb  (deploys the package into the workspace where it runs)
-tools/          build_package.py (builds dist/FabricLoadTest_v3_package.zip), make_sample_data.py
+tools/          build_package.py (builds dist/FabricLoadTest_v3_package.zip), make_sample_data.py, make_synthetic_logs.py
 samples/        sample_performance_data.json (synthetic), models.example.json, models.rls.example.json, users.example.txt
 tests/          pytest suite
 docs/           architecture, deployment, parameters, analysis, changes from upstream, Spanish guide (docs/es)
@@ -89,7 +89,8 @@ higher in the workspace.
    to `Files/PerfScenarios/Users/` and choose `rls_source` / `rls_scope`.
 6. Open `PL_PerfTest_MultiModel_v3`, press **Run**, fill in `models`. The default ramp is the safe `[1, 5, 10]`; change
    `ramp_levels` to `[6, 20, 60, 100, 200, 300]` for a real run.
-7. Run `AnalyzeLoadTest_v3` to check the ramp, the think times and the parallelism.
+7. Run `AnalyzeLoadTest_v3` to check the ramp, the think times and the parallelism, and `AnalyzeReportPerformance_v3` for the
+   report performance analysis (latency, degradation, slowest visuals, skew introduced by the test).
 
 Full steps and troubleshooting: [docs/deployment.md](docs/deployment.md).
 
@@ -137,6 +138,10 @@ All parameters, their effect and recommendations: [docs/parameters.md](docs/para
 `AnalyzeLoadTest_v3` reads the CSV files written under `Files/PerfScenarios/logs/` and shows, among other things, that every
 level had the expected number of distinct users, that levels of one model did not overlap, that models did overlap each other, and
 that the measured wait between actions matches the think time that was applied. See [docs/analysis.md](docs/analysis.md).
+
+`AnalyzeReportPerformance_v3` answers the performance questions: how the report behaves per model and level, where it degrades,
+which visuals and users are slow and how much the offset and the think times distort the load that was really applied
+(20 analyses, charts and automatic conclusions). See [docs/analysis.md](docs/analysis.md#report-performance-analysis-analyzereportperformance_v3).
 
 ## Development
 

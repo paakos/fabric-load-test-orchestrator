@@ -35,6 +35,7 @@ Notebook parameters accept only `int`, `float`, `bool` and `string`. The array o
 | `RunPerfScenario_v3` | Notebook | – |
 | `RunLoadTest_v3` | Notebook | – |
 | `AnalyzeLoadTest_v3` | Notebook | – |
+| `AnalyzeReportPerformance_v3` | Notebook | – |
 | `PL_PerfTest_Ramp_v3` | Pipeline | `{{WORKSPACE_ID}}`, `{{NOTEBOOK:RunLoadTest_v3}}` |
 | `PL_PerfTest_MultiModel_v3` | Pipeline | `{{PIPELINE:PL_PerfTest_Ramp_v3}}` |
 
@@ -78,6 +79,7 @@ the users that did finish is kept. With `write_results_to_tables = true` the sum
 | `RunPerfScenario_v3` | The real cells are executed with fake `notebookutils`, `sempy` and ADOMD modules |
 | `RunLoadTest_v3` | The real cells are executed with a fake `runMultiple` that checks the DAG it receives; the summary cells run over CSV files written by the real scenario notebook, with a fake Spark for the Delta tables |
 | `AnalyzeLoadTest_v3` | Executed over CSV files produced by the scenario notebook (two models in parallel, two ramp levels) |
+| `AnalyzeReportPerformance_v3` | Every cell executed locally (DuckDB, matplotlib) over synthetic logs with the exact result schema (`tools/make_synthetic_logs.py`): 3.3 and 3.4 formats, with and without think times, empty filters, Delta persistence |
 | Installer | Executed against an in-memory fake of the Fabric REST API (dry run, deploy, re-run, overwrite, invalid models, tampered zip, foreign ids) |
 | Package | Hash and leak checks, pipeline/notebook parameter consistency, untouched `upstream/` files |
 
