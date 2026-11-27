@@ -2,6 +2,7 @@
 with the exact schema written by RunScenario_v3 (tools/make_synthetic_logs.py)."""
 import contextlib
 import io
+import json
 
 import pytest
 
@@ -126,6 +127,46 @@ def test_filters_without_rows_do_not_break(manifest):
 def test_folder_without_csv_files_fails_clearly(tmp_path):
     with pytest.raises(Exception, match="No result CSV files"):
         run_notebook(tmp_path / "empty")
+
+
+def test_json_export_is_the_contract_of_the_fabric_app(manifest, tmp_path):
+    import json
+    ns, out = run_notebook(manifest["logs"], {"EXPORT_JSON": True, "EXPORT_ROOT": str(tmp_path), "ANALYSIS_ID": "analysis-1"})
+    folder = tmp_path / "analysis-1"
+    doc = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+    assert ns["ERRORS"] == {} and "Exported" in out
+    assert doc["notebook"] == "AnalyzeReportPerformance_v3" and doc["analysis_id"] == "analysis-1"
+    assert [q["id"] for q in doc["queries"]] == [f"Q{n:02d}" for n in range(1, 21)]
+    assert {q["block"] for q in doc["queries"]} == set("ABCDEF")
+    assert doc["alerts"] and all({"query", "severity", "text"} <= set(a) for a in doc["alerts"])
+    assert any(a["model"] == "SalesModel" and isinstance(a["level"], int) for a in doc["alerts"])
+    assert all(a["model"] for a in doc["alerts"] if a["query"] == "Q07"), "alerts of the form 'Model: text' also carry the model"
+    for q in doc["queries"]:
+        assert q["status"] in ("ok", "no_data") and (q["status"] == "ok") == bool(q["file"])
+        if q["status"] != "ok":
+            continue
+        rows = json.loads((folder / q["file"]).read_text(encoding="utf-8"))
+        assert len(rows) == q["rows"] == len(ns["RESULTS"][q["id"]])
+        columns = {c["name"] for c in q["columns"]}
+        chart = q["chart"]
+        used = [v for key, value in chart.items() if key in ("x", "y", "bars", "lines", "series", "group_by", "label", "value", "marker", "color",
+                                                              "rows", "cols", "size") for v in ([value] if isinstance(value, str) else value or [])]
+        assert set(used) <= columns, (q["id"], set(used) - columns)
+    assert not any("@" in p.read_text(encoding="utf-8") for p in folder.iterdir())
+
+
+def test_typed_notebook_parameters_accept_list_text(manifest):
+    """Fabric notebook parameters are scalars: the app passes lists as JSON text or comma-separated text."""
+    run = run_id(manifest, "SalesModel", 5)
+    ns, _ = run_notebook(manifest["logs"], {"MODELS": "SalesModel, InventoryModel", "LEVELS": "5,20", "RUN_IDS": json.dumps([run]),
+                                            "SINCE_UTC": "", "FOCUS_LEVEL": "", "BASELINE_RUN": ""})
+    assert ns["ERRORS"] == {} and ns["MODELS"] == ["SalesModel", "InventoryModel"] and ns["LEVELS"] == [5, 20] and ns["SINCE_UTC"] is None
+    assert set(ns["RESULTS"]["Q01"].run_id) == {run}
+
+
+def test_without_export_nothing_is_written(manifest, tmp_path):
+    ns, out = run_notebook(manifest["logs"], {"EXPORT_ROOT": str(tmp_path)})
+    assert "EXPORT_JSON = False" in out and list(tmp_path.iterdir()) == []
 
 
 def test_delta_persistence_overwrites_without_duplicates(manifest, tmp_path):

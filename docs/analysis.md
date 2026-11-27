@@ -59,6 +59,20 @@ Parameters (cell tagged `parameters`): `LOGS`, `RUN_PREFIX`, run filters (`SINCE
 `KNEE_FACTOR`), chart sizes (`BUCKET_SEC`, `TOP_N`, `TIMELINE_MAX_RUNS`), the runs compared in Q20 (`BASELINE_RUN`, `CANDIDATE_RUN`),
 `MASK_UPN` and `SAVE_TO_TABLES`.
 
+`EXPORT_JSON = True` (with `ANALYSIS_ID` and `EXPORT_ROOT`, default `Files/PerfScenarios/analysis`) writes the results where the LoadTest Fabric App reads them:
+
+```text
+Files/PerfScenarios/analysis/<ANALYSIS_ID>/
+├── manifest.json            notebook and version, parameters, focus level, runs, alerts, and per analysis: block, title, status, columns, chart spec
+└── qNN_<topic>.json         one file per analysis: array of rows (UPNs already masked)
+```
+
+`status` is `ok`, `no_data` or `error` (with its message). The `chart` object says how to draw the table (`grouped_bar`, `line`, `combo`,
+`small_multiples`, `hbar`, `heatmap`, `scatter`, `stacked100`, `diverging_bar`) and which columns are the axes, so any viewer can draw it without
+running SQL. Typed notebook parameters are scalars, so `RUN_IDS`, `MODELS` and `LEVELS` also accept a JSON list as text or comma-separated text.
+Fabric runs the notebook with `POST /v1/workspaces/{ws}/items/{id}/jobs/instances?jobType=RunNotebook` and
+`{"executionData": {"parameters": {"RUN_PREFIX": {"value": "ramp-v3", "type": "string"}, "EXPORT_JSON": {"value": true, "type": "bool"}}}}`.
+
 | Block | Analyses |
 |---|---|
 | A. Overall | Q01 executive summary per model and level (percentiles, Apdex) · Q02 degradation curve and knee point · Q03 throughput versus latency · Q04 timeline of active users, queries in flight and p90 |
