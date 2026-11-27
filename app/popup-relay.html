@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; font: 15px/1.5 system-ui, sans-serif; color: #14213d; background: #f1f3f8; }
+      main { max-width: 340px; padding: 32px; text-align: center; }
+      button { margin-top: 16px; padding: 10px 20px; border: 0; border-radius: 4px; background: #2447c9; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+      button:disabled { opacity: 0.6; cursor: default; }
+    </style>
+  </head>
+  <body>
+    <!-- The app runs in an iframe of the Fabric portal: this page opens the Microsoft sign-in and returns the response to the app. -->
+    <main>
+      <p id="msg">Continue to sign in with your Microsoft account.</p>
+      <button id="go" type="button">Continue</button>
+    </main>
+    <script type="module" src="/src/popup-relay.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+id: loadtest-app
+name: Load Test
+version: 0.1.0
+services:
+  auth:
+    enabled: true
+    fabric:
+      enabled: true
+    allowedRedirectUris:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+      # Add the URL that `npx rayfin up` prints (https://<name>.webapp.fabricapps.net)
+  data:
+    enabled: false
+  staticHosting:
+    enabled: true
+    root: .
+    folder: dist
+    buildCommand: npm run build
+    indexDocument: index.html
+    assetAccess: protected
+  storage:
+    enabled: false
+  functions:
+    enabled: false
