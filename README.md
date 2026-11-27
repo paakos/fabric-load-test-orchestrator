@@ -58,6 +58,15 @@ Two pipelines are needed because Fabric does not allow a `ForEach` inside anothe
 It has a demo mode with synthetic data (`npm run dev:demo`) and its own tests. Deployment and the Entra registration are in [app/README.md](app/README.md);
 an AI agent can do it too ([docs/agent-deployment.md](docs/agent-deployment.md)).
 
+![Parameters and launch](app/docs/img/02-launch.png)
+
+| | |
+|---|---|
+| ![Run in progress](app/docs/img/05-run-in-progress.png) | ![Analysis overview with alerts](app/docs/img/08-report-overview.png) |
+| **Runs:** level, iteration and users of each model, live | **Reports:** alerts and the 20 analyses, with charts and tables |
+
+More screenshots (environment, per-model settings, launch confirmation, one analysis, help) are in [app/README.md](app/README.md#screenshots). They come from the demo mode: all data is synthetic.
+
 ## Promotion gate (dev → prod)
 
 [`promotion-gate/`](promotion-gate/README.md) turns a load test into a **promotion decision** for a semantic model. Before a model
