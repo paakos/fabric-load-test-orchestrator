@@ -14,6 +14,44 @@ OneLake APIs with the **signed-in user's** delegated token. It has no database a
 
 The app does not use the promotion gate (`promotion-gate/`); it is independent of it.
 
+## Screenshots
+
+Taken in the app's **demo mode** (`npm run dev:demo`): every name, run and result is synthetic.
+
+**Environment** — the workspace, pipeline, lakehouse and notebook the app works with, and the folders it needs.
+
+![Environment page](docs/img/01-environment.png)
+
+**Parameters & launch** — a guided form for the 19 parameters. Exclusive options are buttons, fields that do not apply are greyed out, and the JSON that will be sent is always visible.
+
+![Parameters and launch](docs/img/02-launch.png)
+
+With *Run settings → Per model* every model card carries its own ramp, iterations and think times.
+
+![Per-model run settings](docs/img/03-launch-per-model.png)
+
+A confirmation shows the workspace, the pipeline, the levels of each model and the theoretical peak of users per semantic model.
+
+![Launch confirmation](docs/img/04-launch-confirmation.png)
+
+**Runs** — for each model the level of the ramp, the iteration, the users done and the failed queries, updated while the test runs.
+
+![Run in progress](docs/img/05-run-in-progress.png)
+
+![Run completed](docs/img/06-run-completed.png)
+
+**Reports** — runs `AnalyzeReportPerformance_v3` over the logs of a test and shows its alerts and the 20 analyses with charts and sortable tables.
+
+![New analysis](docs/img/07-report-new-analysis.png)
+
+![Analysis overview with alerts](docs/img/08-report-overview.png)
+
+![One analysis: chart and table](docs/img/09-report-query.png)
+
+**Help** — the repository documentation, searchable, with a link from every parameter to its section.
+
+![Help panel](docs/img/10-help.png)
+
 ## Prerequisites
 
 - Node **20, 22 or 24** (`rayfin-cli` does not support Node 26: `npm ci` warns with `EBADENGINE`).
