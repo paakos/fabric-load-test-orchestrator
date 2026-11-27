@@ -3,6 +3,34 @@
 The installer notebook deploys the notebooks and pipelines into the workspace **where it runs**. It computes every reference
 (workspace, lakehouse, notebook and pipeline ids) in that workspace, so nothing from the machine that built the package is carried over.
 
+## Choose how to deploy
+
+| Way | Use it when | Where |
+|---|---|---|
+| **A. By hand, in the Fabric portal** | You want to see every step, or you cannot install anything locally | [Steps](#steps) below |
+| **B. One command** | You prefer a terminal, or you automate it (CI) | [`tools/deploy_orchestrator.py`](#b-one-command) |
+| **C. With an AI agent** | You want to say it in plain language (GitHub Copilot, Copilot CLI...) | [agent-deployment.md](agent-deployment.md) |
+
+All three run the same installer notebook, so the result and the verification are identical. The optional **LoadTest Fabric App**
+(parameters, launch, progress and reports in a web page) is deployed afterwards: see [app/README.md](../app/README.md).
+
+### B. One command
+
+Needs Python 3.10+, the Azure CLI (`az login` with Contributor in the workspace) and the package zip (`python tools/build_package.py`
+or the Releases page, saved as `dist/FabricLoadTest_v3_package.zip`).
+
+```powershell
+# 1. plan only: nothing is created
+python tools/deploy_orchestrator.py --workspace "<workspace name>" --lakehouse "<lakehouse name>" --dry-run
+# 2. deploy, optionally with your models and RLS defaults
+python tools/deploy_orchestrator.py --workspace "<workspace name>" --lakehouse "<lakehouse name>" `
+  --models-file samples/models.per-model.example.json --rls-source file --rls-scope per_model
+```
+
+It uploads the zip to `Files/deploy/`, creates the installer notebook with those parameters, runs it, deletes it after a successful deployment
+and checks that the six items exist. `--create-lakehouse` creates the lakehouse, `--no-overwrite` aborts when an item already exists,
+`--workspace-id` replaces `--workspace`, and `--help` lists everything.
+
 ## Requirements
 
 - Fabric workspace on a capacity; Contributor role or higher.
