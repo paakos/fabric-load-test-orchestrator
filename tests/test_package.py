@@ -93,6 +93,24 @@ def test_child_pipeline_passes_every_parameter_the_parent_receives_and_nothing_u
     assert set(child["parameters"]) == set(execute["parameters"])
 
 
+PER_MODEL_SETTINGS = ["ramp_levels", "iterations", "delay_sec", "enable_think_times", "think_time_scale", "max_think_time_sec",
+                      "think_time_jitter_pct", "fallback_think_time_sec", "ramp_up_sec", "initial_user_jitter_sec"]
+
+
+def test_a_model_may_override_the_execution_settings_and_falls_back_to_the_pipeline_parameter():
+    parent = pipeline("PL_PerfTest_MultiModel_v3")["properties"]
+    execute = parent["activities"][0]["typeProperties"]["activities"][0]["typeProperties"]["parameters"]
+    for name in PER_MODEL_SETTINGS:
+        assert execute[name]["value"] == f"@coalesce(item()?.{name}, pipeline().parameters.{name})", name
+        assert name in parent["parameters"], name
+    # everything else is global and forwarded unchanged
+    others = set(execute) - set(PER_MODEL_SETTINGS) - {"model_key", "dataset", "model_workspace", "queryfile", "model_settings"}
+    assert others == {"test_name_prefix", "rls_users", "rls_source", "rls_scope", "rls_users_file",
+                      "stop_on_query_error", "fail_on_error_rate", "write_results_to_tables"}
+    for name in others:
+        assert execute[name]["value"] == f"@pipeline().parameters.{name}", name
+
+
 def test_parent_runs_models_in_parallel_and_child_runs_levels_sequentially():
     parent = pipeline("PL_PerfTest_MultiModel_v3")["properties"]["activities"][0]
     child = pipeline("PL_PerfTest_Ramp_v3")["properties"]["activities"][0]

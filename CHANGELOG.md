@@ -1,5 +1,37 @@
 # Changelog
 
+## 3.6.0
+
+Consolidated release: the per-model execution settings, the report performance analysis notebook, a progress heartbeat, a command-line and
+agent-driven deployment path and the **LoadTest Fabric App**. It builds on 3.4.0 and is compatible with every `models` value and result written
+by 3.3.0 and 3.4.0.
+
+- **Per-model execution settings.** Each item of `models` may carry its own `ramp_levels` (a fixed number of users or a ramp), `iterations`,
+  `delay_sec`, `enable_think_times`, `think_time_scale`, `max_think_time_sec`, `think_time_jitter_pct`, `fallback_think_time_sec`, `ramp_up_sec` and
+  `initial_user_jitter_sec`. A key that is missing or `null` falls back to the pipeline parameter of the same name. Only
+  `PL_PerfTest_MultiModel_v3` changes: each of those ten parameters is forwarded as `@coalesce(item()?.<name>, pipeline().parameters.<name>)`.
+  The installer keeps and validates those keys and fails before creating anything on an invalid value. The same semantic model may be listed
+  several times with different `model_key` values, one per user profile. `test_name_prefix`, the RLS switches and the 3.4.0 parameters stay global.
+- **Progress heartbeat.** `RunPerfScenario_v3` writes `Files/PerfScenarios/progress/<loadtest_id>/user_<n>.json` (status, iteration, queries done)
+  at the start of every iteration and when the user ends. It is best effort (a write error never fails the test), holds no UPN or DAX, and does
+  not change the result CSV files.
+- **Report performance analysis.** New notebook `AnalyzeReportPerformance_v3`: 20 analyses (Q01-Q20) in six blocks (overall, per action and
+  journey, per visual, per RLS identity, skew introduced by the offset and the think times, test quality and regression), each with its table, a chart,
+  a description (what it measures, how it is computed, how to read it, skew the test may introduce) and automatic conclusions that name the
+  affected model and level. It reads 3.3 and 3.4 result formats, works without think times, masks UPNs (`MASK_UPN`), can save every result as a Delta
+  table `perf_qNN_<topic>` (`SAVE_TO_TABLES`) and can export `manifest.json` plus one JSON per analysis to `Files/PerfScenarios/analysis/<ANALYSIS_ID>/`
+  (`EXPORT_JSON`), which is what the app shows. `RUN_IDS`, `MODELS` and `LEVELS` also accept JSON or comma-separated text, so a job can pass them.
+- **LoadTest Fabric App** (`app/`): parameterize `PL_PerfTest_MultiModel_v3` in a guided page (exclusive options as buttons, fields that do
+  not apply greyed out), upload navigation and users files to the lakehouse, launch, follow the model, level and iteration of a run, cancel it, and read the
+  analysis (alerts and the 20 analyses with charts and tables) without leaving the app. It has a demo mode and its own tests. See
+  [app/README.md](app/README.md).
+- **Deployment.** `tools/deploy_orchestrator.py` deploys from a terminal (or CI): it uploads the package, runs the installer notebook with your
+  parameters and verifies the result. [AGENTS.md](AGENTS.md), [docs/agent-deployment.md](docs/agent-deployment.md) and
+  [examples/agent-prompts/](examples/agent-prompts) let an AI agent such as GitHub Copilot do the same from plain-language prompts.
+- The package and the installer deploy 4 notebooks and 2 pipelines. `tools/make_synthetic_logs.py` generates synthetic logs with the exact result
+  schema; new tests execute every cell of the analysis notebook over them. `requirements-dev.txt` adds `matplotlib`, `deltalake` and `pyarrow`.
+
+## 3.5.0 (not released separately; included in 3.6.0)
 ## 3.5.0
 
 Additive release: no change to the test notebooks, the pipelines or the result schema.

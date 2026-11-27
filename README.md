@@ -14,15 +14,16 @@ to any workspace with **one installer notebook**.
 | Original (`RunLoadTest` / `RunPerfScenario`) | This repository |
 |---|---|
 | One model and one concurrency level per notebook run; `concurrent_threads` is edited by hand | A **pipeline** passes `concurrent_threads` to the notebook at run time, so a `ForEach` can run a whole ramp |
-| One model per run | A parent pipeline runs **N models in parallel** (`ForEach`, at most 10 at a time) |
+| One model per run | A parent pipeline runs **N models in parallel** (`ForEach`, at most 10 at a time), each with **its own ramp and execution settings** (per-model `ramp_levels`, `iterations`, think times...) |
 | `delay_sec` after every query | Optional **think-time replay**: the pauses between user actions recorded in the Performance Analyzer file (scale, cap, jitter) |
 | All users start at once | Optional **staggered start** (`ramp_up_sec`) and random initial offset (`initial_user_jitter_sec`) |
 | Users hard-coded in a cell | RLS identities from a **list** (`rls_users`) or a **text file** (`rls_users_file`), for all models or **one per model** (`rls_source`, `rls_scope`) |
 | Access token printed in logs | Token **redacted** in console output and `error.log` |
 | A failed query ends the virtual user and loses all its rows | The failed query is a row with `status = error`; the user goes on and its CSV is always written |
-| Manual import of every item | **Installer notebook** + zip: resolves workspace, lakehouse, notebook and pipeline ids for the target workspace and verifies the result |
+| Manual import of every item | **Installer notebook** + zip (by hand, with `tools/deploy_orchestrator.py`, or by an **AI agent**): resolves workspace, lakehouse, notebook and pipeline ids for the target workspace and verifies the result |
 | Results only as CSV files and a `display` | Every run ends with **`summary.json`** and returns it as the notebook **exit value** (p50, p95, failed queries, lost users); optional Delta tables `loadtest_runs` and `loadtest_queries` |
-| – | **Analysis notebook** (DuckDB) with nine queries that prove the ramp, the think times and the parallelism |
+| – | **Analysis notebooks**: `AnalyzeLoadTest_v3` (nine checks that prove the ramp, the think times and the parallelism) and `AnalyzeReportPerformance_v3` (20 analyses with charts and automatic conclusions) |
+| – | A **Fabric App** (`app/`): parameterize, upload files, launch, follow the progress (model, level, iteration) and read the results in the browser |
 | – | Test suite that runs the real notebooks against a fake ADOMD/Fabric runtime |
 
 The complete list of changes against the original is in [docs/changes-from-upstream.md](docs/changes-from-upstream.md).
@@ -41,6 +42,21 @@ PL_PerfTest_MultiModel_v3                         parent pipeline
 
 Two pipelines are needed because Fabric does not allow a `ForEach` inside another `ForEach`. Details in
 [docs/architecture.md](docs/architecture.md).
+
+## LoadTest Fabric App
+
+[`app/`](app/README.md) is a web app (React + TypeScript, deployed as a **Fabric App** with rayfin) for people who do not want to write the
+`models` JSON by hand. It signs in with your own account (Microsoft Entra, delegated read and run permissions only) and has four pages:
+
+- **Parameters & launch:** the 19 parameters of `PL_PerfTest_MultiModel_v3` in a guided form. Exclusive options are buttons, fields that do not apply are greyed
+  out, execution settings can be global or per model, and RLS users can come from a list or a file, global or per model. It uploads the navigation JSON and the users files
+  to the lakehouse and fills in the parameter, then launches the pipeline.
+- **Runs:** the progress of a run per model: level of the ramp, iteration, users done and failed queries. It can cancel a run.
+- **Reports:** runs `AnalyzeReportPerformance_v3` and shows its alerts and the 20 analyses with charts and tables, without leaving the app.
+- **Environment:** workspace, lakehouse, pipeline and notebook the app works with, and the folders it needs.
+
+It has a demo mode with synthetic data (`npm run dev:demo`) and its own tests. Deployment and the Entra registration are in [app/README.md](app/README.md);
+an AI agent can do it too ([docs/agent-deployment.md](docs/agent-deployment.md)).
 
 ## Promotion gate (dev → prod)
 
@@ -65,8 +81,11 @@ The gate documentation is in Spanish.
 notebooks/      RunPerfScenario_v3, RunLoadTest_v3, AnalyzeLoadTest_v3, AnalyzeReportPerformance_v3  (source of truth, English)
 pipelines/      PL_PerfTest_Ramp_v3.json, PL_PerfTest_MultiModel_v3.json (with {{placeholders}} resolved by the installer)
 installer/      Setup_LoadTest_v3.ipynb  (deploys the package into the workspace where it runs)
-tools/          build_package.py (builds dist/FabricLoadTest_v3_package.zip), make_sample_data.py, make_synthetic_logs.py
-samples/        sample_performance_data.json (synthetic), models.example.json, models.rls.example.json, users.example.txt
+app/            LoadTest Fabric App: parameterize, launch, follow and read the results in the browser
+tools/          build_package.py (builds dist/FabricLoadTest_v3_package.zip), deploy_orchestrator.py (command-line deployment), make_sample_data.py, make_synthetic_logs.py
+samples/        sample_performance_data.json (synthetic), models.example.json, models.rls.example.json, models.per-model.example.json, users.example.txt
+examples/       agent-prompts: natural-language prompts to deploy and operate with an AI agent
+AGENTS.md       runbook for AI agents (rules, deployment, running tests, analysis)
 tests/          pytest suite
 docs/           architecture, deployment, parameters, analysis, changes from upstream, Spanish guide (docs/es)
 upstream/       exact copies of the original files (do not edit)
@@ -78,6 +97,16 @@ promotion-gate/ promotion gate for semantic models (own versioning): Python pack
 Prerequisites: a Fabric workspace on a capacity, a **lakehouse in that workspace**, one or more Power BI semantic models,
 a Performance Analyzer export (JSON) per model, and the **XMLA read endpoint enabled** on the capacity. Contributor role or
 higher in the workspace.
+
+There are three ways to deploy; all of them run the same installer notebook and the same verification:
+
+| Way | Command or entry point |
+|---|---|
+| **By hand** (Fabric portal) | The numbered steps below |
+| **One command** | `python tools/deploy_orchestrator.py --workspace "<name>" --lakehouse "<name>" --dry-run`, then again without `--dry-run` ([details](docs/deployment.md#b-one-command)) |
+| **With an AI agent** (GitHub Copilot...) | Open this repository in VS Code and use the prompts of [docs/agent-deployment.md](docs/agent-deployment.md) and [examples/agent-prompts/](examples/agent-prompts); the agent follows [AGENTS.md](AGENTS.md) |
+
+### By hand
 
 1. **Get the package.** Download `FabricLoadTest_v3_package.zip` and `Setup_LoadTest_v3.ipynb` from the
    [Releases](../../releases) page, or build them: `python tools/build_package.py`.

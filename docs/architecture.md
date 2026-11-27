@@ -51,7 +51,14 @@ Files/PerfScenarios/logs/
    ├─ summary.json                        one summary of the run, also the exit value of RunLoadTest_v3 (see below)
    ├─ error.log                           one line per failed query, and the error of a user that could not connect
    └─ thinktimes/<loadtestId>_user_<k>_thinktimes.csv   (only with enable_think_times = true)
+
+Files/PerfScenarios/progress/<loadtestId>/user_<k>.json   heartbeat of each virtual user: status, iteration, queries done (rewritten once per iteration)
+Files/PerfScenarios/analysis/<ANALYSIS_ID>/               JSON export of AnalyzeReportPerformance_v3 (manifest.json + one file per analysis)
 ```
+
+The heartbeat is the only way to see the iteration of a user while it runs (its CSV is written when it ends). It is best effort: a write error is
+ignored, there is at most one write per iteration, and it holds no UPN or DAX. The LoadTest Fabric App reads these files, the run folders and
+`summary.json` to show the progress, and the analysis folder to show the results.
 
 ## Run summary and exit value
 
