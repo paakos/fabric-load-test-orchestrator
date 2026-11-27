@@ -104,7 +104,7 @@ export function analysisIdFor(prefix: string, now: Date): string {
 export function analysisFormProblems(f: AnalysisForm): string[] {
   const out: string[] = [];
   if (!f.prefix.trim()) out.push('RUN_PREFIX is required.');
-  else if (/[\s*?[\]/\\]/.test(f.prefix)) out.push('RUN_PREFIX must not contain spaces or the characters * ? [ ] / \\ (the notebook uses it in a file pattern).');
+  else if (!/^[A-Za-z0-9._-]+$/.test(f.prefix.trim())) out.push('RUN_PREFIX may only contain letters, digits, ".", "_" and "-" (the notebook uses it in a file pattern and in SQL).');
   if (f.sinceUtc && Number.isNaN(Date.parse(f.sinceUtc))) out.push('SINCE_UTC is not a valid date.');
   if (!(f.slaSec > 0)) out.push('SLA_SEC must be greater than 0.');
   if (!(f.apdexT > 0)) out.push('APDEX_T must be greater than 0.');

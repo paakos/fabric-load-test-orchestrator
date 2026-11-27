@@ -42,9 +42,21 @@ $workApp = Join-Path $WorkDir 'app'
 $nodeMajor = [int]((node -v) -replace '^v(\d+)\..*', '$1')
 if ($nodeMajor -notin 20, 22, 24) { throw "Node $nodeMajor is not supported by rayfin-cli: use Node 20, 22 or 24." }
 
+$WorkDir = [IO.Path]::GetFullPath($WorkDir)
+$marker = Join-Path $WorkDir '.loadtest-app-deploy'
+# /MIR deletes whatever is not in the repository: only mirror into a folder that is outside the repo and is either new, empty or ours.
+$sep = [IO.Path]::DirectorySeparatorChar
+if (($WorkDir + $sep).StartsWith($repo + $sep, [StringComparison]::OrdinalIgnoreCase) -or ($repo + $sep).StartsWith($WorkDir + $sep, [StringComparison]::OrdinalIgnoreCase)) {
+  throw "-WorkDir ($WorkDir) must be outside the repository ($repo) and must not contain it."
+}
+if ((Test-Path $WorkDir) -and (Get-ChildItem $WorkDir -Force | Select-Object -First 1) -and -not (Test-Path $marker)) {
+  throw "-WorkDir ($WorkDir) exists, is not empty and was not created by this script: use a new or empty folder (the copy would delete its content)."
+}
+
 if ($PSCmdlet.ShouldProcess($WorkDir, 'Copy the repository (without promotion-gate, .git, node_modules)')) {
   New-Item -ItemType Directory -Force $WorkDir | Out-Null
-  robocopy $repo $WorkDir /MIR /XD promotion-gate .git .github node_modules dist .rayfin /XF *.zip *.pem .env .env.local /NFL /NDL /NJH /NJS | Out-Null
+  Set-Content $marker 'Scratch copy written by app/deploy/deploy-app.ps1; safe to delete.'
+  robocopy $repo $WorkDir /MIR /XD promotion-gate .git .github node_modules dist .rayfin /XF *.zip *.pem .env .env.local .loadtest-app-deploy /NFL /NDL /NJH /NJS | Out-Null
   if ($LASTEXITCODE -ge 8) { throw "robocopy failed with code $LASTEXITCODE" }
 }
 

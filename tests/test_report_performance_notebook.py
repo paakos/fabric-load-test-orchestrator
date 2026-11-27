@@ -164,6 +164,16 @@ def test_typed_notebook_parameters_accept_list_text(manifest):
     assert set(ns["RESULTS"]["Q01"].run_id) == {run}
 
 
+def test_unsafe_run_prefix_and_analysis_id_are_rejected(manifest, tmp_path):
+    for bad in ["x'||1||'", "a;b", "../x"]:
+        with pytest.raises(ValueError, match="RUN_PREFIX"):
+            run_notebook(manifest["logs"], {"RUN_PREFIX": bad})
+    for bad in ["/abs/path", "../escape", "a/b", ".."]:
+        with pytest.raises(ValueError, match="ANALYSIS_ID"):
+            run_notebook(manifest["logs"], {"EXPORT_JSON": True, "EXPORT_ROOT": str(tmp_path), "ANALYSIS_ID": bad})
+    assert list(tmp_path.iterdir()) == []
+
+
 def test_without_export_nothing_is_written(manifest, tmp_path):
     ns, out = run_notebook(manifest["logs"], {"EXPORT_ROOT": str(tmp_path)})
     assert "EXPORT_JSON = False" in out and list(tmp_path.iterdir()) == []

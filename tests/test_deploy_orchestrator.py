@@ -171,6 +171,24 @@ def test_tokens_never_appear_in_urls_or_output(package, capsys):
     assert "fabric-token" not in out.out + out.err and "storage-token" not in out.out + out.err
 
 
+@pytest.mark.parametrize("bad", ["x&calc", "a|b", "$(whoami)", "x;y", "`id`"])
+def test_the_subscription_is_validated_before_it_reaches_the_az_command(monkeypatch, bad):
+    monkeypatch.setenv("AZ_SUBSCRIPTION_ID", bad)
+    monkeypatch.setattr(deploy.shutil, "which", lambda name: "az")
+    monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("az must not run with an unsafe subscription"))
+    with pytest.raises(deploy.DeployError, match="AZ_SUBSCRIPTION_ID"):
+        deploy.az_token(deploy.FABRIC)
+
+
+def test_az_runs_without_a_shell(monkeypatch):
+    seen = {}
+    monkeypatch.setenv("AZ_SUBSCRIPTION_ID", "My Subscription (1)")
+    monkeypatch.setattr(deploy.shutil, "which", lambda name: "C:/az/az.cmd")
+    monkeypatch.setattr(deploy.subprocess, "run", lambda cmd, **k: seen.update(cmd=cmd, kw=k) or type("R", (), {"stdout": "tok\n"})())
+    assert deploy.az_token(deploy.FABRIC) == "tok"
+    assert seen["cmd"][0] == "C:/az/az.cmd" and "shell" not in seen["kw"] and seen["cmd"][-1] == "My Subscription (1)"
+
+
 @pytest.mark.parametrize("bad", ["not-a-guid", "1234"])
 def test_workspace_id_must_be_a_guid(package, bad):
     with pytest.raises(SystemExit):

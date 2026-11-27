@@ -141,6 +141,7 @@ describe('running the notebook', () => {
   it('analysis id follows the notebook default pattern and the form is validated', () => {
     expect(analysisIdFor('ramp-v3', new Date('2026-11-20T10:15:00Z'))).toBe('ramp-v3-20261120-101500');
     expect(analysisFormProblems({ ...form, prefix: 'a*b' })[0]).toContain('RUN_PREFIX');
+    for (const bad of ["x'||1||'", 'a;b', 'a(b)', 'a b', '../x']) expect(analysisFormProblems({ ...form, prefix: bad })[0], bad).toContain('RUN_PREFIX');
     expect(analysisFormProblems({ ...form, prefix: '' })).toHaveLength(1);
     expect(analysisFormProblems({ ...form, slaSec: 0 })[0]).toContain('SLA_SEC');
     expect(analysisFormProblems(form)).toEqual([]);

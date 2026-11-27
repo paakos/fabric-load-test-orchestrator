@@ -21,6 +21,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -56,11 +57,16 @@ class Http:
 def az_token(resource: str) -> str:
     # AZ_SUBSCRIPTION_ID picks the account when `az` is signed in to several tenants (the default one may not be the right one)
     subscription = os.environ.get("AZ_SUBSCRIPTION_ID")
-    command = ["az", "account", "get-access-token", "--resource", resource, "--query", "accessToken", "-o", "tsv"]
+    az = shutil.which("az")
+    if not az:
+        raise DeployError("The Azure CLI (`az`) was not found. Install it and run `az login` (or set FABRIC_ACCESS_TOKEN / STORAGE_ACCESS_TOKEN).")
+    command = [az, "account", "get-access-token", "--resource", resource, "--query", "accessToken", "-o", "tsv"]
     if subscription:
+        if not re.fullmatch(r"[A-Za-z0-9 ._()-]+", subscription):
+            raise DeployError("AZ_SUBSCRIPTION_ID must be a subscription id or name (letters, digits, spaces and . _ ( ) -).")
         command += ["--subscription", subscription]
     try:
-        out = subprocess.run(command, capture_output=True, text=True, check=True, shell=(os.name == "nt"))
+        out = subprocess.run(command, capture_output=True, text=True, check=True)
     except (OSError, subprocess.CalledProcessError) as error:
         raise DeployError(f"Could not get a token for {resource}. Run `az login` (or set FABRIC_ACCESS_TOKEN / STORAGE_ACCESS_TOKEN).") from error
     return out.stdout.strip()
