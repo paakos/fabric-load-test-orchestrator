@@ -351,6 +351,54 @@ def test_models_may_carry_users_or_a_users_file(env):
     assert "users" not in stored[3] and "users_file" not in stored[3]
 
 
+def test_per_model_execution_settings_are_kept_validated_and_optional(env):
+    fake, lake = env
+    models = [{"model_key": "Light", "dataset": "Sales", "queryfile": QUERY, "ramp_levels": [5, 10], "iterations": 2, "delay_sec": 0,
+               "enable_think_times": False, "think_time_scale": 0.5, "max_think_time_sec": 30, "think_time_jitter_pct": 0,
+               "fallback_think_time_sec": 1.5, "ramp_up_sec": 20, "initial_user_jitter_sec": 3},
+              {"model_key": "Heavy", "dataset": "Sales", "queryfile": QUERY, "ramp_levels": [60], "iterations": None, "unknown_key": 1},
+              {"model_key": "Plain", "dataset": "Sales", "queryfile": QUERY}]
+    run_installer(fake, lake, MODELS=models)
+    stored = {m["model_key"]: m for m in pipeline_parameters(fake, "PL_PerfTest_MultiModel_v3")["models"]["defaultValue"]}
+    assert stored["Light"]["ramp_levels"] == [5, 10] and stored["Light"]["enable_think_times"] is False
+    assert stored["Light"]["think_time_scale"] == 0.5 and stored["Light"]["iterations"] == 2 and stored["Light"]["delay_sec"] == 0
+    assert stored["Heavy"]["ramp_levels"] == [60]
+    assert "iterations" not in stored["Heavy"] and "unknown_key" not in stored["Heavy"]
+    assert set(stored["Plain"]) == {"model_key", "dataset", "workspace", "queryfile"}
+    # the same dataset can be declared several times with different model_key values (one entry per user profile)
+    assert [m["dataset"] for m in stored.values()] == ["Sales", "Sales", "Sales"]
+
+
+def test_the_sample_models_files_are_accepted_by_the_installer(env):
+    from helpers import ROOT
+    for name in ("models.example.json", "models.rls.example.json", "models.per-model.example.json"):
+        fake, lake = env
+        run_installer(fake, lake, MODELS=json.loads((ROOT / "samples" / name).read_text(encoding="utf-8")), DRY_RUN=True)
+
+
+@pytest.mark.parametrize("extra,message", [
+    (dict(ramp_levels=[]), "ramp_levels must be a non-empty list"),
+    (dict(ramp_levels="5,10"), "ramp_levels must be a non-empty list"),
+    (dict(ramp_levels=[0]), "ramp_levels must be a non-empty list"),
+    (dict(ramp_levels=[301]), "ramp_levels must be a non-empty list"),
+    (dict(ramp_levels=[True]), "ramp_levels must be a non-empty list"),
+    (dict(iterations=0), "iterations must be an integer"),
+    (dict(iterations=1.5), "iterations must be an integer"),
+    (dict(delay_sec=-1), "delay_sec must be an integer"),
+    (dict(enable_think_times="yes"), "enable_think_times must be true or false"),
+    (dict(think_time_scale=-0.1), "think_time_scale must be a number"),
+    (dict(think_time_jitter_pct=1.5), "think_time_jitter_pct must be a number between 0 and 1"),
+    (dict(ramp_up_sec="fast"), "ramp_up_sec must be a number"),
+    (dict(max_think_time_sec=True), "max_think_time_sec must be a number"),
+])
+def test_invalid_per_model_settings_fail_before_anything_is_created(env, extra, message):
+    fake, lake = env
+    models = [{"model_key": "A", "dataset": "x", "queryfile": QUERY, **extra}]
+    with pytest.raises(ValueError, match=message):
+        run_installer(fake, lake, MODELS=models)
+    assert fake.items == {}
+
+
 def test_rls_defaults_are_written_into_both_pipelines(env):
     fake, lake = env
     _, out = run_installer(fake, lake, RLS_SOURCE="file", RLS_SCOPE="global", RLS_USERS_FILE=f"{USERS}/users.txt",

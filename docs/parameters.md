@@ -1,7 +1,8 @@
 # Parameters
 
 For a field-by-field reference of `PL_PerfTest_MultiModel_v3` (what each parameter expects, the `workspace` format, and how to switch between
-lists, files, global users and per-model users) see [pipeline-parameters.md](pipeline-parameters.md).
+lists, files, global users and per-model users) see [pipeline-parameters.md](pipeline-parameters.md). The execution settings
+(`ramp_levels`, `iterations`, `delay_sec` and the think-time and start parameters) can also be set **per model**, inside each item of `models`.
 
 ## Pipeline parameters
 

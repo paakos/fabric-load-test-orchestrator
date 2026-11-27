@@ -49,43 +49,43 @@
                     "type": "Expression"
                   },
                   "ramp_levels": {
-                    "value": "@pipeline().parameters.ramp_levels",
+                    "value": "@coalesce(item()?.ramp_levels, pipeline().parameters.ramp_levels)",
                     "type": "Expression"
                   },
                   "delay_sec": {
-                    "value": "@pipeline().parameters.delay_sec",
+                    "value": "@coalesce(item()?.delay_sec, pipeline().parameters.delay_sec)",
                     "type": "Expression"
                   },
                   "iterations": {
-                    "value": "@pipeline().parameters.iterations",
+                    "value": "@coalesce(item()?.iterations, pipeline().parameters.iterations)",
                     "type": "Expression"
                   },
                   "enable_think_times": {
-                    "value": "@pipeline().parameters.enable_think_times",
+                    "value": "@coalesce(item()?.enable_think_times, pipeline().parameters.enable_think_times)",
                     "type": "Expression"
                   },
                   "think_time_scale": {
-                    "value": "@pipeline().parameters.think_time_scale",
+                    "value": "@coalesce(item()?.think_time_scale, pipeline().parameters.think_time_scale)",
                     "type": "Expression"
                   },
                   "max_think_time_sec": {
-                    "value": "@pipeline().parameters.max_think_time_sec",
+                    "value": "@coalesce(item()?.max_think_time_sec, pipeline().parameters.max_think_time_sec)",
                     "type": "Expression"
                   },
                   "think_time_jitter_pct": {
-                    "value": "@pipeline().parameters.think_time_jitter_pct",
+                    "value": "@coalesce(item()?.think_time_jitter_pct, pipeline().parameters.think_time_jitter_pct)",
                     "type": "Expression"
                   },
                   "fallback_think_time_sec": {
-                    "value": "@pipeline().parameters.fallback_think_time_sec",
+                    "value": "@coalesce(item()?.fallback_think_time_sec, pipeline().parameters.fallback_think_time_sec)",
                     "type": "Expression"
                   },
                   "ramp_up_sec": {
-                    "value": "@pipeline().parameters.ramp_up_sec",
+                    "value": "@coalesce(item()?.ramp_up_sec, pipeline().parameters.ramp_up_sec)",
                     "type": "Expression"
                   },
                   "initial_user_jitter_sec": {
-                    "value": "@pipeline().parameters.initial_user_jitter_sec",
+                    "value": "@coalesce(item()?.initial_user_jitter_sec, pipeline().parameters.initial_user_jitter_sec)",
                     "type": "Expression"
                   },
                   "rls_users": {
