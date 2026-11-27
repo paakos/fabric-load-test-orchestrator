@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.6.1
+
+Documentation only: ten screenshots of the LoadTest Fabric App (taken in its demo mode, so all data is synthetic) in `app/docs/img/`, shown in [app/README.md](app/README.md#screenshots) and in the main README. No change to the notebooks, the pipelines, the installer or the app. The notebook keeps its own version (3.6.0).
+
 ## 3.6.0
 
 Consolidated release: the per-model execution settings, the report performance analysis notebook, a progress heartbeat, a command-line and
