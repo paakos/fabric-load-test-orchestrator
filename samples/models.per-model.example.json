@@ -1,0 +1,30 @@
+[
+  {
+    "model_key": "Sales-Analysts",
+    "dataset": "Sales",
+    "workspace": "",
+    "queryfile": "/lakehouse/default/Files/PerfScenarios/Queries/PowerBIPerformanceData_Analysts.json",
+    "users_file": "/lakehouse/default/Files/PerfScenarios/Users/users_analysts.txt",
+    "ramp_levels": [5, 10],
+    "iterations": 2
+  },
+  {
+    "model_key": "Sales-Managers",
+    "dataset": "Sales",
+    "workspace": "",
+    "queryfile": "/lakehouse/default/Files/PerfScenarios/Queries/PowerBIPerformanceData_Managers.json",
+    "users_file": "/lakehouse/default/Files/PerfScenarios/Users/users_managers.txt",
+    "ramp_levels": [20, 40],
+    "think_time_scale": 2.0,
+    "ramp_up_sec": 30
+  },
+  {
+    "model_key": "Inventory",
+    "dataset": "Inventory",
+    "workspace": "",
+    "queryfile": "/lakehouse/default/Files/PerfScenarios/Queries/PowerBIPerformanceData_Inventory.json",
+    "users_file": "/lakehouse/default/Files/PerfScenarios/Users/users_inventory.txt",
+    "ramp_levels": [10],
+    "enable_think_times": false
+  }
+]

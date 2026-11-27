@@ -1,5 +1,6 @@
 """Functional tests of RunPerfScenario_v3: the notebook is executed with a fake ADOMD connection and writes real CSV files."""
 import csv
+import json
 import time
 from pathlib import Path
 
@@ -115,6 +116,23 @@ def test_a_failure_is_logged_without_the_token_and_re_raised(fake_fabric, tmp_pa
         run(tmp_path, "run-f", iterations=1, delay_sec=0)
     error_log = (tmp_path / "Files" / "PerfScenarios" / "logs" / "run-f" / "error.log").read_text()
     assert "boom" in error_log and SECRET_TOKEN not in error_log
+    progress = json.loads((tmp_path / "Files" / "PerfScenarios" / "progress" / "run-f" / "user_3.json").read_text())
+    assert progress["status"] == "failed"
+
+
+def test_the_progress_heartbeat_reports_the_iteration_and_ends_done(fake_fabric, tmp_path):
+    run(tmp_path, "run-p", iterations=2, delay_sec=0, enable_think_times=False)
+    progress = json.loads((tmp_path / "Files" / "PerfScenarios" / "progress" / "run-p" / "user_3.json").read_text())
+    assert progress["status"] == "done" and progress["iteration"] == 2 and progress["iterations"] == 2
+    assert progress["thread_id"] == 3 and progress["queries_done"] == progress["queries_total"] == 2 * QUERIES_IN_SAMPLE
+    assert "@" not in json.dumps(progress) and "contoso" not in json.dumps(progress)
+
+
+def test_a_heartbeat_that_cannot_be_written_never_fails_the_test(fake_fabric, tmp_path):
+    (tmp_path / "Files" / "PerfScenarios").mkdir(parents=True)
+    (tmp_path / "Files" / "PerfScenarios" / "progress").write_text("not a folder")  # makes every heartbeat write fail
+    run(tmp_path, "run-q", iterations=1, delay_sec=0, enable_think_times=False)
+    assert len(read_csv(result_files(tmp_path, "run-q")[1])) == QUERIES_IN_SAMPLE
 
 
 def _capture_connections(monkeypatch):

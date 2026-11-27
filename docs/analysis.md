@@ -47,3 +47,49 @@ Latency also includes time queued while the capacity is throttled: check the cap
 Query 6 proves that the replayed pauses happened. Query 3 and 5 prove that users were spread in time. Together with a flat or slowly growing
 latency curve in query 8 they show that the ramp reproduces an interactive load rather than a burst of simultaneous queries.
 A burst (all users, no pauses) gives a much higher `peak_concurrent` for the same number of users, which is what a stress test measures.
+
+## Report performance analysis (`AnalyzeReportPerformance_v3`)
+
+`notebooks/AnalyzeReportPerformance_v3.ipynb` is the second analysis notebook. `AnalyzeLoadTest_v3` verifies that the test did what it
+should; this one explains **how the report performed**. It reads the same CSV files (and the `thinktimes/` files when they exist), with
+DuckDB, and draws every result with matplotlib. Attach the lakehouse that holds the logs as its default lakehouse and run all cells.
+
+Parameters (cell tagged `parameters`): `LOGS`, `RUN_PREFIX`, run filters (`SINCE_UTC`, `RUN_IDS`, `MODELS`, `LEVELS`), the
+`FOCUS_LEVEL` of the detailed analyses (default: the highest level of each model), thresholds (`SLA_SEC` per action, `APDEX_T` per query,
+`KNEE_FACTOR`), chart sizes (`BUCKET_SEC`, `TOP_N`, `TIMELINE_MAX_RUNS`), the runs compared in Q20 (`BASELINE_RUN`, `CANDIDATE_RUN`),
+`MASK_UPN` and `SAVE_TO_TABLES`.
+
+`EXPORT_JSON = True` (with `ANALYSIS_ID` and `EXPORT_ROOT`, default `Files/PerfScenarios/analysis`) writes the results where the LoadTest Fabric App reads them:
+
+```text
+Files/PerfScenarios/analysis/<ANALYSIS_ID>/
+├── manifest.json            notebook and version, parameters, focus level, runs, alerts, and per analysis: block, title, status, columns, chart spec
+└── qNN_<topic>.json         one file per analysis: array of rows (UPNs already masked)
+```
+
+`status` is `ok`, `no_data` or `error` (with its message). The `chart` object says how to draw the table (`grouped_bar`, `line`, `combo`,
+`small_multiples`, `hbar`, `heatmap`, `scatter`, `stacked100`, `diverging_bar`) and which columns are the axes, so any viewer can draw it without
+running SQL. Typed notebook parameters are scalars, so `RUN_IDS`, `MODELS` and `LEVELS` also accept a JSON list as text or comma-separated text.
+Fabric runs the notebook with `POST /v1/workspaces/{ws}/items/{id}/jobs/instances?jobType=RunNotebook` and
+`{"executionData": {"parameters": {"RUN_PREFIX": {"value": "ramp-v3", "type": "string"}, "EXPORT_JSON": {"value": true, "type": "bool"}}}}`.
+
+| Block | Analyses |
+|---|---|
+| A. Overall | Q01 executive summary per model and level (percentiles, Apdex) · Q02 degradation curve and knee point · Q03 throughput versus latency · Q04 timeline of active users, queries in flight and p90 |
+| B. Per action and journey | Q05 time per user action (serial and parallel bound) · Q06 full journey per user and iteration |
+| C. Per visual | Q07 ranking of the slowest visuals · Q08 heat map visual × level · Q09 stability (variability) · Q10 volume returned versus time · Q12 cold versus warm cache |
+| D. Per identity | Q11 performance per virtual user / RLS identity |
+| E. Skew of the test | Q13 wall-clock breakdown of a virtual user · Q14 think-time accuracy · Q15 skew of the staggered start · Q16 nominal versus effective concurrency · Q17 ramp phases and plateau |
+| F. Quality and regression | Q18 SLA compliance per action · Q19 completeness and errors · Q20 run comparison (before/after) |
+
+Every analysis states what it measures, how it is computed, how to read it and the skew the test may introduce. The last cells
+summarise the alerts with the affected model and level (**Automatic conclusions**) and, with `SAVE_TO_TABLES = True`, save every result
+as a Delta table `perf_qNN_<topic>` in the default lakehouse (the notebook is Python, so it writes with `deltalake` to the OneLake path).
+
+Things worth knowing when you read it:
+
+- Queries that failed (3.4.0 and later) are counted but left out of every latency. Logs from 3.3.0 and earlier are read as all successful.
+- Without think times the notebook still works; only Q14 reports "No data".
+- **Q16 and Q17 tell you how much of the nominal level was really applied.** With realistic think times 100 users can be a handful of
+  simultaneous queries, and a start window longer than the user journey means the plateau is never reached.
+- UPNs are hashed (`user_xxxxxx`) in tables and charts unless `MASK_UPN = False`.

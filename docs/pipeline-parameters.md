@@ -20,20 +20,22 @@ PL_PerfTest_MultiModel_v3  ──ForEach (parallel)──►  PL_PerfTest_Ramp_v
 
 ## Quick reference
 
+The ten settings marked with † can also be set **per model** inside each item of `models` (see *Per-model execution settings*); the value of the table is then the default for the models that do not set their own.
+
 | Parameter | Type | Default | Purpose |
 |---|---|---|---|
 | [`models`](#models) | Array of objects | one `CHANGE_ME_*` placeholder | The semantic models to test, one ramp each |
 | [`test_name_prefix`](#test_name_prefix) | String | `ramp-v3` | Prefix of the result folders |
-| [`ramp_levels`](#ramp_levels) | Array of integers | `[1, 5, 10]` | Concurrent users of each level, run sequentially |
-| [`iterations`](#iterations) | Int | `1` | Times each user repeats the recorded scenario |
-| [`delay_sec`](#delay_sec) | Int | `4` | Wait between iterations |
-| [`enable_think_times`](#think-times) | Bool | `true` | Replay the pauses between user actions |
-| [`think_time_scale`](#think-times) | Float | `1.0` | Multiplier of every recorded pause |
-| [`max_think_time_sec`](#think-times) | Float | `60.0` | Cap of one pause |
-| [`think_time_jitter_pct`](#think-times) | Float | `0.1` | Random variation of each pause |
-| [`fallback_think_time_sec`](#think-times) | Float | `0.0` | Pause between queries when the file has no user actions |
-| [`ramp_up_sec`](#ramp_up_sec-and-initial_user_jitter_sec) | Float | `0.0` | Window in which the users of one level start |
-| [`initial_user_jitter_sec`](#ramp_up_sec-and-initial_user_jitter_sec) | Float | `0.0` | Random extra delay before each user's first action |
+| [`ramp_levels`](#ramp_levels) † | Array of integers | `[1, 5, 10]` | Concurrent users of each level, run sequentially |
+| [`iterations`](#iterations) † | Int | `1` | Times each user repeats the recorded scenario |
+| [`delay_sec`](#delay_sec) † | Int | `4` | Wait between iterations |
+| [`enable_think_times`](#think-times) † | Bool | `true` | Replay the pauses between user actions |
+| [`think_time_scale`](#think-times) † | Float | `1.0` | Multiplier of every recorded pause |
+| [`max_think_time_sec`](#think-times) † | Float | `60.0` | Cap of one pause |
+| [`think_time_jitter_pct`](#think-times) † | Float | `0.1` | Random variation of each pause |
+| [`fallback_think_time_sec`](#think-times) † | Float | `0.0` | Pause between queries when the file has no user actions |
+| [`ramp_up_sec`](#ramp_up_sec-and-initial_user_jitter_sec) † | Float | `0.0` | Window in which the users of one level start |
+| [`initial_user_jitter_sec`](#ramp_up_sec-and-initial_user_jitter_sec) † | Float | `0.0` | Random extra delay before each user's first action |
 | [`rls_source`](#rls-identities) | String | `list` | Where the impersonated users come from: `list`, `file`, `none` |
 | [`rls_scope`](#rls-identities) | String | `global` | `global` or `per_model` |
 | [`rls_users`](#rls-identities) | String | empty | Global list of UPNs, comma-separated |
@@ -73,6 +75,56 @@ Notes:
 - The whole object of each model is passed to the child pipeline as JSON (`model_settings`), so extra keys are tolerated and ignored.
 - The default (`CHANGE_ME_*`) is a placeholder: **replace it** before running.
 
+### Per-model execution settings
+
+Each item of `models` may also carry any of the execution settings below. A key that is **missing or `null`** uses
+the pipeline parameter of the same name, so every `models` value written for 3.3.0 keeps working unchanged.
+
+| Key in the model item | Type | Accepts | Falls back to |
+|---|---|---|---|
+| `ramp_levels` | array of integers | each value from 1 to 300 | `ramp_levels` |
+| `iterations` | integer | 1 or more | `iterations` |
+| `delay_sec` | integer | 0 or more | `delay_sec` |
+| `enable_think_times` | boolean | `true` / `false` | `enable_think_times` |
+| `think_time_scale` | number | 0 or more | `think_time_scale` |
+| `max_think_time_sec` | number | 0 or more | `max_think_time_sec` |
+| `think_time_jitter_pct` | number | 0 to 1 | `think_time_jitter_pct` |
+| `fallback_think_time_sec` | number | 0 or more | `fallback_think_time_sec` |
+| `ramp_up_sec` | number | 0 or more | `ramp_up_sec` |
+| `initial_user_jitter_sec` | number | 0 or more | `initial_user_jitter_sec` |
+
+- A model with `"ramp_levels": [10]` runs one level of 10 users; with `[5, 20, 60]` it runs three levels one after another. Models still run in parallel
+  with each other, each with its own ramp.
+- `test_name_prefix` and the RLS switches (`rls_source`, `rls_scope`, `rls_users`, `rls_users_file`) stay global. RLS users are already chosen per model with
+  `users` / `users_file` and `rls_scope = per_model`.
+- The **same semantic model can appear several times**, with a different `model_key`, to simulate user profiles that browse differently: each entry brings
+  its own `queryfile`, its own users and its own ramp. The load on the semantic model is the sum of the profiles that run at the same time.
+  Each entry starts its own Spark session, so the loads may not overlap exactly, and the capacity must be able to run all of them. Compare profiles by
+  `loadtest_id` (it contains the `model_key`): the `model` column of the results is the semantic model name, shared by all profiles.
+- The installer checks these values in `MODELS` and fails before creating anything. When you run the pipeline, Fabric does not check them: an invalid value
+  fails when that level starts.
+
+```json
+{
+  "models": [
+    {"model_key": "Sales-Analysts", "dataset": "Sales", "workspace": "",
+     "queryfile": "/lakehouse/default/Files/PerfScenarios/Queries/nav_analysts.json",
+     "users_file": "/lakehouse/default/Files/PerfScenarios/Users/users_analysts.txt",
+     "ramp_levels": [5, 10]},
+    {"model_key": "Sales-Managers", "dataset": "Sales", "workspace": "",
+     "queryfile": "/lakehouse/default/Files/PerfScenarios/Queries/nav_managers.json",
+     "users_file": "/lakehouse/default/Files/PerfScenarios/Users/users_managers.txt",
+     "ramp_levels": [20, 40], "think_time_scale": 2.0}
+  ],
+  "rls_source": "file",
+  "rls_scope": "per_model",
+  "ramp_levels": [1, 5, 10]
+}
+```
+
+Here the analysts run 5 and then 10 users, the managers run 20 and then 40 users at their own slower pace, and any further model without its own
+`ramp_levels` would use `[1, 5, 10]`.
+
 ## `test_name_prefix`
 
 Text that starts the name of every run: `<test_name_prefix>-<model_key>-c<users>-<yyyymmdd-hhmmss>`. Result files are written to
@@ -84,7 +136,7 @@ Text that starts the name of every run: `<test_name_prefix>-<model_key>-c<users>
 Array of integers: the number of **concurrent virtual users** of each level, for example `[6, 20, 60, 100, 200, 300]`.
 
 - Levels run **sequentially** for each model: a level starts only when the previous one finishes.
-- The same array applies to every model; models run their ramps in parallel with each other.
+- The same array applies to every model unless the model item carries its own `ramp_levels` (see *Per-model execution settings*); models run their ramps in parallel with each other.
 - Each value must be between **1 and 300**. A larger or smaller value fails at the start of that level.
 - The default `[1, 5, 10]` is a safe first run. Large levels need a bigger Spark session: raise `vCores` in the `%%configure` cell of
   `RunLoadTest_v3`.
@@ -287,7 +339,8 @@ Here `SalesB` lives in the workspace named `Finance`; `SalesA` is in the workspa
 | `models[].workspace` | `model_workspace` | `workspace` |
 | `models[].queryfile` | `queryfile` | `queryfile` |
 | whole `models[]` item | `model_settings` (JSON text) | `model_settings` (`users`, `users_file`) |
-| `ramp_levels` | `ramp_levels` (the `ForEach_Ramp` items) | `concurrent_threads` = current level |
+| `models[].ramp_levels`, or else `ramp_levels` | `ramp_levels` (the `ForEach_Ramp` items) | `concurrent_threads` = current level |
+| `models[].<setting>`, or else the parameter of the same name, for the other nine per-model settings | same name | same name |
 | other parameters | same name | same name |
 
 You only fill in the parent. The child pipeline can also be run alone for one model; then `model_key`, `dataset`, `model_workspace` and

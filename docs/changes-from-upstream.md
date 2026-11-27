@@ -47,6 +47,7 @@ The ADOMD connection, the role/`CustomData`/`EffectiveUserName` handling and the
 | `pipelines/PL_PerfTest_Ramp_v3.json` | One model: sequential `ForEach` over `ramp_levels`, each calling `RunLoadTest_v3` with `concurrent_threads = @item()` |
 | `pipelines/PL_PerfTest_MultiModel_v3.json` | Parallel `ForEach` over `models`, each running the child pipeline |
 | `notebooks/AnalyzeLoadTest_v3.ipynb` | DuckDB analysis of the result CSV files (ramp, think times, parallel models, latency) |
+| `notebooks/AnalyzeReportPerformance_v3.ipynb` | Report performance analysis of the result CSV files: 20 analyses with charts, automatic conclusions and optional Delta tables |
 | `installer/Setup_LoadTest_v3.ipynb` + `tools/build_package.py` | Deploy to any workspace without hard-coded ids |
 | `tests/` | Executes the real notebook cells against fake runtimes |
 
